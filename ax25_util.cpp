@@ -92,7 +92,7 @@ void asc2AXcall(char *in, unsigned char *out) {
   
   /* SEARCH FOR DIGI * MARKER */
   char* p = strpbrk(in, ",:*");
-  if(*p == '*') *out |= 0x80;   // Hass-been-digipeated bit
+  if(p!=0 && *p == '*') *out |= 0x80;   // Hass-been-digipeated bit
 }
 
 

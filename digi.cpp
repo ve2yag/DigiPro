@@ -1,16 +1,11 @@
 
 #include "project.h"
 
+/* LORA MODULE, CONFIG OVERWRITED BY SETTING IN PROJECT.H */
 SX1278 lora(SX1278_BW_125_00_KHZ, SX1278_SF_12, SX1278_CR_4_5);
-
-const unsigned char NodeCall[7] =  { 'V'<<1,'E'<<1,'2'<<1,'Y'<<1,'A'<<1,'G'<<1, 0x68 };  // Change CALLSIGN HERE, and just below
-const unsigned char DigiDest[7] =  { 'A'<<1,'P'<<1,'E'<<1,'T'<<1,'1'<<1,'0'<<1, 0x60 };
-const unsigned char DigiPath[7] =  { 'W'<<1,'I'<<1,'D'<<1,'E'<<1,'1'<<1,' '<<1, 0x62 };
-#define NodeMsg PSTR(":VE2YAG-4 :")                                                      // Change CALLSIGN here too
 
 /* TELEMETRY CONFIG */
 const char TelemSequence[] = { 1,1,1,4,1,1,1,3,1,1,1,2,1,1,1,0 }; 
-uint8_t tag;		// Message anwser
 
 /* PAYLOAD BUFFER */
 static unsigned char pkt[255], index;
@@ -34,12 +29,14 @@ uint32_t TelemTimer;       // Telemetry timer
 unsigned int stat_rx_pkt, stat_digipeated_pkt, stat_tx_pkt;
 unsigned int stat_oe_pkt, stat_bin_pkt;  
 
+
 /******************************************************************************
  * Check timer overflow
  *****************************************************************************/
 long TimerOverflow(unsigned long value) {
     return (long)(value-wdt_clk) < 0 ? 1:0;
 }   
+
 
 /******************************************************************************
  * Watch clear channel, 100ms slottime, persistance 63.
@@ -55,6 +52,7 @@ void WaitClearChannel() {
     } while(random(0,256) > CHANNEL_PERSIST);
 }
 
+
 /******************************************************************************
  * Packet handling fonction
  * 
@@ -67,14 +65,14 @@ void CreatePacket() {
     index=0;
     //pkt[index++] = HEADER_TYPE_AX25;
     
-     /* SEND SOURCE/DEST CALLSIGN */    
-    for(i=0; i<7; i++) pkt[index++] = DigiDest[i];  // Dest call
-    for(i=0; i<7; i++) pkt[index++] = NodeCall[i];  // Source call
+    /* SEND SOURCE/DEST CALLSIGN */  
+    asc2AXcall(BCN_DEST, &pkt[index]); 
+    asc2AXcall(MYCALL, &pkt[index]); 
+    index+=14;   
 
-    /* PATH */
-    if(DigiPath[0]!=(' ' << 1)) {
-        for(i=0; i<7; i++) pkt[index++] = DigiPath[i];
-    }
+    /* PATH (ONLY ONE SUPPORTED) */
+    asc2AXcall(BCN_PATH, &pkt[index]); 
+	index+=7;
 
     /* UI FRAME AND PID */
     pkt[index-1] |= 1;  // Finalize path here
@@ -133,13 +131,12 @@ void DigiSendBeacon(uint8_t id) {
     } else {
       
         /* LATITUDE, TABLE/OVERLAY, LONGITUDE AND SYMBOL */
-        index += sprintf_P((char*)&pkt[index], PSTR("!4819.55NL07824.15Wa"));  		// YAG-4 test site
-        //index += sprintf_P((char*)&pkt[index], PSTR("!4830.00NL07832.00Wa"));  		// AIG-4 Aiguebelle
-
+        index += sprintf_P((char*)&pkt[index], BCN_POSITION);  		// YAG-4 test site
+ 
         /* COMMENT */
         switch(id) {
-            case 0:  index += sprintf_P((char*)&pkt[index], PSTR("433.775 MHz 20dbm B125 SF12 CR45"));  break; 
-            case 1:  index += sprintf_P((char*)&pkt[index], PSTR("Lora digipeater V2.1, Preissac.")); break; 
+            case 0:  index += sprintf_P((char*)&pkt[index], B1_COMMENT);  break; 
+            case 1:  index += sprintf_P((char*)&pkt[index], B2_COMMENT); break; 
         }
     }
 
@@ -159,7 +156,7 @@ void DigiSendTelem() {
     CreatePacket();
  
     /* CREATE APRS MESSAGE HEADER ONLY FOR TELEMETRY PARAMETERS */
-    if(TelemSequence[seq]!=1) index += sprintf_P((char*)&pkt[index], NodeMsg);
+    if(TelemSequence[seq]!=1) index += sprintf((char*)&pkt[index], ":%-9s:", MYCALL);
      
     /* FINISH TELEM PACKET */
     uint8_t param1 = ((float)batt_volt/1000.0 - 2.5) / 0.008;
@@ -334,7 +331,8 @@ void MessageHandler(unsigned char *buf, uint8_t size) {
 void DigiRules(unsigned char *packet, uint8_t packet_size) {
     uint8_t DataIndex,PathIndex,i;  
     unsigned char flag,ssid,c; 
-    unsigned char tmp[9]; 
+    unsigned char NodeCall[7];
+    char tmp[12]; 
     
     /* REJECT NON-UI FRAME, FIND DATA FRAME (DataIndex) */
     for(DataIndex=0; DataIndex<packet_size; DataIndex++) if(packet[DataIndex]&1) break;
@@ -342,6 +340,7 @@ void DigiRules(unsigned char *packet, uint8_t packet_size) {
     DataIndex+=2;   /* Skip PID */
     
     /* TEST FOR PACKET FROM THIS NODE */
+	asc2AXcall(MYCALL, NodeCall);
     for(i=0, flag=0; i<7; i++) { 
         if(i!=6) {
             if(packet[7+i]!=NodeCall[i]) { flag=1; break; }   
@@ -355,7 +354,8 @@ void DigiRules(unsigned char *packet, uint8_t packet_size) {
     if(TestDup(&packet[DataIndex], packet_size-DataIndex)) return; 
 
 	/* CHECK MESSAGE FOR THIS STATION */
-	if(memcmp_P(&packet[DataIndex], NodeMsg, 11) == 0) {
+	sprintf(tmp, ":%-9s:", MYCALL);
+	if(memcmp(&packet[DataIndex], tmp, 11) == 0) {
 
 		/* PROCESS MSG */
 		MessageHandler(&packet[DataIndex+11], packet_size-11-DataIndex);

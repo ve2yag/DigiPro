@@ -159,12 +159,20 @@ void loop() {
     /* SEND AND RECEIVE PACKET, UNTIL NOTHING TO DO */
     while(DigiPoll());
 
-    /* GO TO SLEEP MODE 2 MINUTES IF BATTERY DROP BELOW A LEVEL */
+    /* GO TO SLEEP MODE IF BATTERY DROP BELOW A LEVEL */
     if(batt_volt < 3500) {
-        if(sleep_flag==0) DigiSendBeacon(2);    // send system beacon for sleep mode
-        sleep_flag = 1;
-        DigiSleep();          // Put lora radio module in sleep mode
-        t = wdt_clk + (60 * 2);
+		
+		/* SEND SLEEP BEACON ONCE, AND ONLY IF CPU NOT REBOOTED ON LOW BATTERY ON TRANSMIT */
+        if(sleep_flag==0 && wdt_clk>600) {
+			lora.setPower(13);		// 20mW beacon 
+			sleep_flag = 1;		
+			DigiSendBeacon(2);    	// send system beacon for sleep mode
+			lora.setPower(LORA_POWER);
+		}        
+        DigiSleep();          // Put lora radio module in sleep
+        
+        /* WAIT 15 MINUTES */
+        t = wdt_clk + (60 * 15);
         while(wdt_clk < t) {
             wdt_flag = 0;
             set_sleep_mode(SLEEP_MODE_PWR_DOWN);
