@@ -1,19 +1,15 @@
 /***************************************************************************
  * Lora digipeater
  * 
- * Based on ExpressTracker code, using Lora module and Atmega 168(328PB) with
+ * Based on ExpressTracker code, using Lora module and Atmega 328 with
  * internal 8 MHz RC oscillator.
  * 
  * Note about using internal RC:
  * -Download MiniCore hardware lib for Arduino.
- * -Burn ArduinoISP into board, connect SPI/Reset to target with Mosfet
- *  level converter.
- * -Make sure Lora module have pull-up on CS, because pin are Hi-Z when 
- *  programming.
- * -Configure Board with no bootloader, but hit burn bootloader just to
- *  set configuration fuse. (default was RC internal 8/8 = 1 MHz.
+ * -Use Arduino as programmer and connect them to ICP header
+ * -Configure Board with no bootloader, internal 8MHz and  hit burn bootloader 
+ *  just to set configuration fuse. (default was RC internal 8/8 = 1 MHz.
  * -Burn code. Take note watchdog is enabled by default, take care of them.
- * -To setup watchdog, MCUSR must be cleared, else watchdog cannot be stopped.
  * 
  * V1.0 - AIG-4 code, working good.
  * V2.0 - Code increase above 16k (328 only)
@@ -23,11 +19,8 @@
  * V2.1 -BUG: Lora module ne reset jamais. Library laisse la pin non defini.
  *      -Retarder tout les beacons sauf 1 pour pas qu'il transmettre tous en même temps.
  *      -Compilation conditionnel pour enlever le BMP180 et le OE et compiler pour 168P (<16k)
- *      -Trap packet trop court et packet sans path final bit ou au mauvais endroit.
- * 		-BUG: Sleep packet send each 2 minutes. (fix: send only once when battery become low)
- *      -setup() Wait for voltage rise above 3.5v or sleep beacon is sleep non-stop
- *      -BUG: WaitClear() is bypass. re-enable it.
- *      -Change CR47 to CR45 to align with Lora in europa.
+ *      -BUG: When CPU reboot on transmit high current when battery are very cold, sleep 
+ *       beacon is transmitted immediatly after each reboot and digi enter a death loop. 
  * 
  * Calibrate:
  * Batt voltage, using define in DigiPro.
@@ -36,12 +29,11 @@
  * Pinout:
  * See project.h 
  * 
- * Note:
- * AREF - Capactor to ground ***** NOT TO VCC !!!!!!!!!
- * 
  * Current draw:
- * Test board draw 61ma on TX 17dbm, 23ma on rx, with led without power save
- * With power save, 11.83ma on RX, 0.63ma when radio module sleeping. KY5033 reg.
+ * 11.83ma on RX (95% is lora Module), 0.63ma when radio module sleeping 
+ * using MCP1702-33. Quiescent current of this regulator is 5uA max. Cheap
+ * 1117 regulator quiescent current is around 10ma, more than whole circuit.
+ * 
  * 
  ***************************************************************************/
 #include <avr/sleep.h>
@@ -59,12 +51,26 @@ float int_temp,pressure;
 bool sleep_flag;
 
 /* EXTERIOR TEMPERATURE SENSOR */ 
+#if DS_ENABLE==1
 OneWire oneWire(DS_SENSOR); 
 DallasTemperature sensors(&oneWire);
+#endif
 
 /* BMP180 INSIDE TEMPERATURE AND PRESSURE SENSOR */
 #if BMP180_ENABLE==1
 Adafruit_BMP085 bmp_sensor;
+#endif
+
+
+/******************************************
+ * readVoltage()
+ *****************************************/
+#if VOLT_ENABLE==1
+void readVoltage() {
+	batt_volt = 0;
+	for(uint8_t i=0; i<10; i++) batt_volt += analogRead(BATT_VOLT);
+	batt_volt = (uint32_t)batt_volt * BAT_CAL / 10230L;
+}
 #endif
 
 /******************************************
@@ -76,37 +82,27 @@ void setup() {
     Watchdog_setup();
 
     /* BATTERY VOLTAGE SENSOR */
+    #if VOLT_ENABLE==1
     analogReference(INTERNAL);
     analogRead(BATT_VOLT);      // 1st reading seem a little bit off
-
+	#endif
+	
     /* IF MODEM CONFIGURE FAIL, RESET BOARD AT NEXT WATCHDOG IRQ */
     if(DigiInit() == 0) {
         wdt_flag = 31;
         while(1);       // Watchdog will reset
     }
-	DigiSleep();		// Put in low power mode until end of setup
 
-	/* ON REBOOT, HOLD LORA RESET AND WAIT FOR VOLTAGE RISE ABOVE 3.5 VOLTS */
-	do {
-		/* SLEEP FOR ONE SECOND */
-        wdt_flag = 0;
-        set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-        sleep_enable();
-        sleep_mode();		
-        sleep_disable();
-        
-        /* AVERAGE 10x ADC READ BATTERY VOLTAGE IN mV */
-        batt_volt = 0;
-        for(uint8_t i=0; i<10; i++) batt_volt += analogRead(BATT_VOLT);
-        batt_volt = (uint32_t)batt_volt * BAT_CAL / 10230L;
-        
-	} while(batt_volt < 3500);
-
-    /* SENSOR INIT DS1820 AND BMP180 */ 
+    /* SENSOR INIT */ 
+	#if DS_ENABLE==1
     sensors.begin();
-#if BMP180_ENABLE==1
-    bmp_sensor.begin(); 
-#endif
+	#endif
+	#if BMP180_ENABLE==1
+    bmp_sensor.begin();
+	#endif
+    #if VOLT_ENABLE==1
+    readVoltage(); 
+	#endif
 }
 
 
@@ -115,7 +111,7 @@ void setup() {
  *****************************************/
 void loop() {
     uint32_t t;
-    static uint32_t temp_to;
+    static uint32_t sensor_to;
 
     /* GO TO SLEEP FOR 1 SECOND IF NO REQUEST FROM MODULE */
     if(digitalRead(LORA_DIO) == LOW) {
@@ -124,7 +120,7 @@ void loop() {
         PCMSK2 = 0x08;    // PCINT19 pin-on-change interrupt for PD3
         PCICR = 0x04;     // PCINT2 ENABLE
     
-        /* CPU GO TO SLEEP FOR 1 SEC OR INCOMING PACKET */
+        /* POWER DOWN CPU, WAKE-UP WITH 1Hz WATCHDOG INTERRUPT OR INCOMING PACKET */
         wdt_flag = 0;
         set_sleep_mode(SLEEP_MODE_PWR_DOWN);
         sleep_enable();
@@ -137,19 +133,21 @@ void loop() {
     }
 
 	/* CHECK SENSOR EACH MINUTE */
-    if(wdt_clk > temp_to) {
-        temp_to = wdt_clk + 60;
+    if(wdt_clk > sensor_to) {
+        sensor_to = wdt_clk + 60;
 
 		/* AVERAGE 10x ADC READ BATTERY VOLTAGE IN mV */
-		batt_volt = 0;
-		for(uint8_t i=0; i<10; i++) batt_volt += analogRead(BATT_VOLT);
-		batt_volt = (uint32_t)batt_volt * BAT_CAL / 10230L;
-
-		/* DS18B20 EXT TEMP */
+		#if VOLT_ENABLE==1
+		readVoltage();
+		#endif
+		
+		/* DS18B20 EXTERIOR TEMP */
+		#if DS_ENABLE==1
         sensors.requestTemperatures();  
         ext_temp = sensors.getTempCByIndex(0); 
-
-		/* BMP180 INT TEMP AND PRESSURE */
+		#endif
+		
+		/* BMP180 INTERIOR TEMP AND PRESSURE */
 		#if BMP180_ENABLE==1
         pressure = (float)bmp_sensor.readPressure() / 1000.0;    // Measure in kPa;
         int_temp = bmp_sensor.readTemperature();        
@@ -160,6 +158,7 @@ void loop() {
     while(DigiPoll());
 
     /* GO TO SLEEP MODE IF BATTERY DROP BELOW A LEVEL */
+    #if VOLT_ENABLE==1
     if(batt_volt < 3500) {
 		
 		/* SEND SLEEP BEACON ONCE, AND ONLY IF CPU NOT REBOOTED ON LOW BATTERY ON TRANSMIT */
@@ -182,4 +181,5 @@ void loop() {
         }
                 
     } else sleep_flag = 0; 
+	#endif
 }

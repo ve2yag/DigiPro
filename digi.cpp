@@ -87,8 +87,9 @@ void CreatePacket() {
  * Wait channel to be clear and send packet.
  *****************************************************************************/
 void SendPacket() {
-#if OE_TYPE_PACKET_ENABLE==1
-	/* REPLY IN SAME FORMAT AS RECEIVED, OR IF OE PACKET ARE USED ON NETWORK, BEACON TOO IS OE STYLE */
+
+	/* SEND IN ASCII OR BINARY, CHOOSE FORMAT THE MOST USED ON NETWORK AROUND */
+	#if OE_TYPE_PACKET_ENABLE==1
     if(stat_oe_pkt>stat_bin_pkt) {
 		char *buf = (char*)malloc(256);
 		if(buf) {
@@ -104,7 +105,9 @@ void SendPacket() {
 			return;
 		}
 	}
-#endif
+	#endif
+	
+	/* WAIT CHANNEL CLEAR AND SEND BEACON */
     WaitClearChannel();
     lora.tx(pkt, index);
     while(lora.txBusy());
@@ -127,7 +130,6 @@ void DigiSendBeacon(uint8_t id) {
         char tmp[6];
         dtostrf(ext_temp, 5, 1, tmp);
         index += sprintf((char*)&pkt[index], ">%umV (%s) T=%sC R%uD%uT%u", batt_volt, sleep_flag?"SLP":"ACT", tmp, stat_rx_pkt, stat_digipeated_pkt, stat_tx_pkt);
-       
     } else {
       
         /* LATITUDE, TABLE/OVERLAY, LONGITUDE AND SYMBOL */
@@ -142,6 +144,7 @@ void DigiSendBeacon(uint8_t id) {
 
     SendPacket();
 }
+
 
 /******************************************************************************
  * void DigiSendTelem()
@@ -177,6 +180,7 @@ void DigiSendTelem() {
     SendPacket();
 }
 
+
 /******************************************************************************
  * unsigned short DoCRC(unsigned short crc, unsigned char c)
  * 
@@ -194,6 +198,7 @@ unsigned short DoCRC(unsigned short crc, unsigned char c) {
 
     return crc;
 }
+
 
 /******************************************************************************
 * TestDup
@@ -266,8 +271,9 @@ void AddDupList(unsigned char *p, int size) {
 * Send digipeated packet and update stat
 ******************************************************************************/
 void DigiRepeat(unsigned char *packet, int packet_size) {
-#if OE_TYPE_PACKET_ENABLE==1
-	/* REPLY IN SAME FORMAT AS RECEIVED, OR IF OE PACKET ARE USED ON NETWORK, BEACON TOO IS OE STYLE */
+
+	/* REPLY IN SAME FORMAT AS RECEIVED. ASCII OR BINARY */
+	#if OE_TYPE_PACKET_ENABLE==1
     if(pkt_oe_format == true) {
 		char *buf = (char*)malloc(256);
 		if(buf) {
@@ -283,12 +289,15 @@ void DigiRepeat(unsigned char *packet, int packet_size) {
 			return;
 		}
 	}
-#endif
+	#endif
+
+	/* WAIT CHANNEL CLEAR AND SEND BEACON */
     WaitClearChannel();
     lora.tx(packet, packet_size);
     while(lora.txBusy());
     stat_digipeated_pkt++;
 }
+
 
 /******************************************************************************
  * void MessageHandler(unsigned char *buf, size)
@@ -322,7 +331,7 @@ void MessageHandler(unsigned char *buf, uint8_t size) {
  * -Reject any non-UI frame
  * -Reject packet from this node (Source call = Node call)
  * -Trig beacon 1 if data frame contain ?APRS?
- * -Trig beacon 3 and telemetry  if data frame contain :<nodecall>:?APRSS and exit
+ * -Trig beacon 3 if data frame contain :<nodecall>:?APRSS
  * -Test if packet is in duplicate list
  * -Process generic SSID digipeating
  * -Reject if no path
@@ -479,7 +488,7 @@ int DigiPoll() {
         if(length<17) return 1;
 
         /* IF PACKET ARE ASCII, CONVERT THEM BEFORE HEADER IS: < 0xFF 0x01 */
-#if OE_TYPE_PACKET_ENABLE==1
+		#if OE_TYPE_PACKET_ENABLE==1
 		pkt_oe_format = false;
         if(pkt[0] == '<' && pkt[1] == 0xFF) {
 			payload = (char*)malloc(255);
@@ -493,7 +502,7 @@ int DigiPoll() {
         } else {
 			stat_bin_pkt++;
 		}
-#endif
+		#endif
 
         /* SPOT CHECK FOR BAD PACKET, CHECK ADDRES FINAL BIT */
         for(i=0; i<length; i++) { c=pkt[i]; if((c & 1) == 1) break; }  // Search for path final bit
@@ -529,12 +538,14 @@ int DigiPoll() {
     }
 
     /* TELEMETRY TIMEOUT */
+	#if VOLT_ENABLE==1 || BMP180_ENABLE==1 || DS_ENABLE==1
     if(TimerOverflow(TelemTimer)!=0) {
         DigiSendTelem();
         TelemTimer = wdt_clk + (uint32_t)TELEM_INTERVAL; 
         return 1;
     }
-
+	#endif
+	
     return 0; 
 }
 
@@ -577,6 +588,6 @@ int DigiInit() {
     Beacon1Timer = wdt_clk + (uint32_t)B1_INTERVAL;;
     Beacon2Timer = wdt_clk + (uint32_t)B2_INTERVAL;
     Beacon3Timer = wdt_clk + (uint32_t)B3_INTERVAL;
-    TelemTimer = wdt_clk + (uint32_t)TELEM_INTERVAL; 
+    TelemTimer   = wdt_clk + (uint32_t)TELEM_INTERVAL; 
 	return DigiWake();
 }
