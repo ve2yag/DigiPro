@@ -67,7 +67,7 @@ void CreatePacket() {
     
     /* SEND SOURCE/DEST CALLSIGN */  
     asc2AXcall(BCN_DEST, &pkt[index]); 
-    asc2AXcall(MYCALL, &pkt[index]); 
+    asc2AXcall(MYCALL, &pkt[index+7]); 
     index+=14;   
 
     /* PATH (ONLY ONE SUPPORTED) */
