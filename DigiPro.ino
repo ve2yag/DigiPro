@@ -1,7 +1,7 @@
 /***************************************************************************
  * Lora digipeater
  * 
- * Based on ExpressTracker code, using Lora module and Atmega 328 with
+ * Based on ExpressTracker code, using Lora module and Atmega 168/328 with
  * internal 8 MHz RC oscillator.
  * 
  * Note about using internal RC:
@@ -9,7 +9,7 @@
  * -Use Arduino as programmer and connect them to ICP header
  * -Configure Board with no bootloader, internal 8MHz and  hit burn bootloader 
  *  just to set configuration fuse. (default was RC internal 8/8 = 1 MHz.
- * -Burn code. Take note watchdog is enabled by default, take care of them.
+ * -Burn code. Take note watchdog is enabled by default without bootloader, take care of them.
  * 
  * V1.0 - AIG-4 code, working good.
  * V2.0 - Code increase above 16k (328 only)

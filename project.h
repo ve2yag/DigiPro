@@ -41,10 +41,10 @@
 #define CHANNEL_PERSIST 63    /* 25% persistance */
 
 /* DIGIPEATER CONFIG */
-#define OE_TYPE_PACKET_ENABLE 1		// Enable ASCII packet mode
+#define OE_TYPE_PACKET_ENABLE 1		// Enable ASCII and binary dual mode 
 #define MYCALL   "VE2YAG-4"
 #define BCN_DEST "APZDG2"
-#define BCN_PATH "WIDE1-1"
+#define BCN_PATH "WIDE1-1"			// Comment out or set to "" to disable it.
 #define BCN_POSITION PSTR("!4819.55NL07824.15Wa") // YAG-4 test site
 //#define BCN_POSITION PSTR("!4830.00NL07832.00Wa") // AIG-4 Aiguebelle
 #define B1_COMMENT PSTR("433.775 MHz 20dbm B125 SF12 CR45")
@@ -53,7 +53,7 @@
 #define B2_INTERVAL    1550
 #define B3_INTERVAL    1750
 #define TELEM_INTERVAL 950
-#define WIDEN_MAX  3
+#define WIDEN_MAX      3
 
 /* HARDWARE SENSOR CONFIG */
 #define DS_ENABLE           1
@@ -76,7 +76,7 @@
 #define LORA_RESET 17 
 #define I2C_SDA    18 // BMP180 sensor 
 #define I2C_SCL    19
-#define BATT_VOLT  A0 // (A0 for DIP28 prototype, else A7) Cell voltage, 15k/47k 5v = 1.22v (internal 1.2v ref)
+#define BATT_VOLT  A0 // (A0 for DIP28 prototype, else A7 for TQFP-32 PCB) Cell voltage, 15k/47k 5v = 1.22v (internal 1.2v ref)
 
 /* TELEMETRY */
 extern uint16_t batt_volt;

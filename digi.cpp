@@ -60,20 +60,21 @@ void WaitClearChannel() {
  *****************************************************************************/
 void CreatePacket() {
     uint8_t i;
-        
-    /* LORA HEADER */
-    index=0;
-    //pkt[index++] = HEADER_TYPE_AX25;
-    
+            
     /* SEND SOURCE/DEST CALLSIGN */  
+    index=0;
     asc2AXcall(BCN_DEST, &pkt[index]); 
     asc2AXcall(MYCALL, &pkt[index+7]); 
     index+=14;   
 
     /* PATH (ONLY ONE SUPPORTED) */
-    asc2AXcall(BCN_PATH, &pkt[index]); 
-	index+=7;
-
+	#ifdef BCN_PATH
+	if(strlen(BCN_PATH)!=0) {
+	    asc2AXcall(BCN_PATH, &pkt[index]); 
+		index+=7;
+	}
+	#endif
+	
     /* UI FRAME AND PID */
     pkt[index-1] |= 1;  // Finalize path here
     pkt[index++] = 0x03;    /* UI Frame */
