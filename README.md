@@ -12,10 +12,12 @@
 Digipeater are extremly efficient, current draw is around 10,5ma on receive and 0,5ma when enter sleep mode. Only Lora module are powered and CPU stay in power down mode (few uA) Wake only when incoming packet is ready inside Lora module, also wake each second to check if it time to transmit beacon and telemetry.
 
 Configure radio and digi with project.h file. 
- 
- ![Board](Board.jpg) ![Digi VA2AIG-4](Digi.png)
 
 [See schematic and PCB](Board.pdf)
+
+ ![Board](Board.jpg) ![Digi VA2AIG-4](Digi.png)
+
+Antenna is 3D printed EDZ, 2x 5/8 wave. 8.1dbi and easy to tune.
 
 VA2AIG-4, Digipeater wide coverage (Have a bug with V2.0) [Map](https://fr.aprs.fi/#!call=a%2FVA2AIG-4&timerange=3600&tail=3600)
 
