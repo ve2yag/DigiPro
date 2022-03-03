@@ -68,12 +68,10 @@ void CreatePacket() {
     index+=14;   
 
     /* PATH (ONLY ONE SUPPORTED) */
-	#ifdef BCN_PATH
 	if(strlen(BCN_PATH)!=0) {
 	    asc2AXcall(BCN_PATH, &pkt[index]); 
 		index+=7;
 	}
-	#endif
 	
     /* UI FRAME AND PID */
     pkt[index-1] |= 1;  // Finalize path here

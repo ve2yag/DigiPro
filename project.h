@@ -43,8 +43,8 @@
 /* DIGIPEATER CONFIG */
 #define OE_TYPE_PACKET_ENABLE 1		// Enable ASCII and binary dual mode 
 #define MYCALL   "VE2YAG-4"
-#define BCN_DEST "APZDG2"
-#define BCN_PATH "WIDE1-1"			// Comment out or set to "" to disable it.
+#define BCN_DEST "APZDG2-1"		// -1 -2 or -3 for SSID digipeating else:
+#define BCN_PATH ""				// Set to "" to disable,  and "WIDE2-2" for std path
 #define BCN_POSITION PSTR("!4819.55NL07824.15Wa") // YAG-4 test site
 //#define BCN_POSITION PSTR("!4830.00NL07832.00Wa") // AIG-4 Aiguebelle
 #define B1_COMMENT PSTR("433.775 MHz 20dbm B125 SF12 CR45")
