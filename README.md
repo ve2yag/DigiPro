@@ -2,7 +2,10 @@
  Lora APRS digipeater for AVR328
  
  - Compatible with ASCII packet format [LoRa-APRS-tracker](https://github.com/lora-aprs/LoRa_APRS_Tracker) and binary/AX25 format [sh123/esp32_loraprs](https://github.com/sh123/esp32_loraprs)
- - Digipeat in same format packet received and digi beacon use the most heard format.
+ - Digipeat packet in same format received. Digi beaconing and telemetry use the most heard format.
+ - Digipeater support WIDEx-x and SSID digipeating for shortest packet.
+ - Support ?APRS? ANS ?APRSS query
+ - Support message ACKing, but don't use messaging for now. (remote config?)
  
  ![Board](Board.jpg) ![Digi VA2AIG-4](Digi.png)
 
