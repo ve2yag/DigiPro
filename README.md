@@ -1,6 +1,9 @@
 # DigiPro
  Lora APRS digipeater for AVR328
  
+ - Compatible with ASCII packet format [LoRa-APRS-tracker](https://github.com/lora-aprs/LoRa_APRS_Tracker) and binary/AX25 format [sh123/esp32_loraprs](https://github.com/sh123/esp32_loraprs)
+ - Digipeat in same format packet received and digi beacon use the most heard format.
+ 
  ![Board](Board.jpg) ![Digi VA2AIG-4](Digi.png)
 
 [See schematic and PCB](Board.pdf)
