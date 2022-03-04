@@ -1,5 +1,7 @@
 # DigiPro
- Lora APRS digipeater for AVR168/328
+ Lora APRS digipeater for Arduino/AVR
+ 
+ Atmega 168/328P(B) using internal 8MHz RC oscillator at 3.3 volts.
  
  - Compatible with ASCII packet format [LoRa-APRS-tracker](https://github.com/lora-aprs/LoRa_APRS_Tracker) and binary/AX25 format [sh123/esp32_loraprs](https://github.com/sh123/esp32_loraprs)
  - Digipeat packet in same format received. Digi beaconing and telemetry use the most heard format.
