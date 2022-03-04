@@ -11,7 +11,7 @@
  - Support 18650 battery voltage monitoring and sleep mode under 3.5 volts
  - Additional telemetry using DS18B20 and BMP180 for internal/external temperature and pressure.
 
-Digipeater are extremly efficient, current draw is around 10,5ma on receive and 0,5ma when enter sleep mode. Only Lora module are powered and CPU stay in power down mode (few uA) Wake only when incoming packet is ready inside Lora module, also wake each second to check if it time to transmit beacon and telemetry.
+Digipeater are extremly efficient, current draw is around 10,5ma on receive and 0,5ma when enter sleep mode. Only Lora module are powered and CPU stay in power down mode (few uA) Wake only when incoming packet is ready inside Lora module, also wake each second to check if it time to transmit beacon and telemetry. When all is tuned, I put some Goop glue on feedpoint connection to waterproof them.
 
 Configure radio and digi with project.h file. 
 
