@@ -19,7 +19,9 @@ Configure radio and digi with project.h file.
 
  ![Board](Board.jpg) ![Digi VA2AIG-4](Digi.png)
 
-Antenna is 3D printed EDZ, 2x 5/8 wave. 8.1dbi and easy to tune.
+Antenna is 3D printed EDZ, 2x 5/8 wave. 8.1dbi and easy to tune. Antenna is made from 36" stainless tig welding rod, 3/32 inch. Mast is 1/2 water CPVC pipe, coax RG-174/U. Coax coil at feed point is current balun to stabilize antenna pattern and choke current flow back to Lora module.
+
+Enclosure is 3D printed, using Cubesat shape. Solar panel are 80mmx80mm 160ma@5v, 3 sides. 
 
 VA2AIG-4, Digipeater wide coverage (Have a bug with V2.0) [Map](https://fr.aprs.fi/#!call=a%2FVA2AIG-4&timerange=3600&tail=3600)
 
