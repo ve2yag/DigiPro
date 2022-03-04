@@ -1,0 +1,11 @@
+Rod stainless 3/32
+Phasing 90mm
+Ant element 420mm
+
+SWR trop haut. (1.2 -1.5), flat vers 435mhz.
+
+Phasing total 93mm, element 420mm
+
+Fin du phasing, fil cuivre plein qui descend au 45 vers coax et 5 loop autour du mat.
+
+SWR 1:1 a 433.300MHz
