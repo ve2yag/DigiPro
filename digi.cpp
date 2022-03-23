@@ -571,7 +571,6 @@ int DigiWake() {
     lora.setFrequency((FREQ * 1000000.0)+FREQ_ERR);   // APRS freq
     lora.setPpmError(PPM_ERR);
     lora.setPower(LORA_POWER);  // dbm (max 20)
-    lora.setSyncword(0x34);
     delay(50);
     return 1;
 }
