@@ -499,9 +499,9 @@ int DigiPoll() {
             pkt_oe_format = true;
             stat_oe_pkt++;
         } else {
-			stat_bin_pkt++;
-		}
-		#endif
+            stat_bin_pkt++;
+	}
+	#endif
 
         /* SPOT CHECK FOR BAD PACKET, CHECK ADDRES FINAL BIT */
         for(i=0; i<length; i++) { c=pkt[i]; if((c & 1) == 1) break; }  // Search for path final bit
@@ -537,7 +537,7 @@ int DigiPoll() {
     }
 
     /* TELEMETRY TIMEOUT */
-	#if VOLT_ENABLE==1 || BMP180_ENABLE==1 || DS_ENABLE==1
+    #if VOLT_ENABLE==1 || BMP180_ENABLE==1 || DS_ENABLE==1
     if(TimerOverflow(TelemTimer)!=0) {
         DigiSendTelem();
         TelemTimer = wdt_clk + (uint32_t)TELEM_INTERVAL; 
@@ -582,10 +582,9 @@ int DigiWake() {
  * Initialize digi radio module.
  *****************************************************************************/
 int DigiInit() {
-
-    Beacon1Timer = wdt_clk + (uint32_t)B1_INTERVAL;;
+    Beacon1Timer = wdt_clk + (uint32_t)B1_INTERVAL;
     Beacon2Timer = wdt_clk + (uint32_t)B2_INTERVAL;
     Beacon3Timer = wdt_clk + (uint32_t)B3_INTERVAL;
     TelemTimer   = wdt_clk + (uint32_t)TELEM_INTERVAL; 
-	return DigiWake();
+    return DigiWake();
 }
