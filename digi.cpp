@@ -89,7 +89,7 @@ void SendPacket() {
 
 	/* SEND IN ASCII OR BINARY, CHOOSE FORMAT THE MOST USED ON NETWORK AROUND */
 	#if OE_TYPE_PACKET_ENABLE==1
-    if(stat_oe_pkt>stat_bin_pkt) {
+    if(stat_oe_pkt>=stat_bin_pkt) {
 		char *buf = (char*)malloc(256);
 		if(buf) {
 			buf[0] = '<'; 
@@ -271,8 +271,8 @@ void AddDupList(unsigned char *p, int size) {
 ******************************************************************************/
 void DigiRepeat(unsigned char *packet, int packet_size) {
 
-	/* REPLY IN SAME FORMAT AS RECEIVED. ASCII OR BINARY */
-	#if OE_TYPE_PACKET_ENABLE==1
+    /* REPLY IN SAME FORMAT AS RECEIVED. ASCII OR BINARY */
+    #if OE_TYPE_PACKET_ENABLE==1
     if(pkt_oe_format == true) {
 		char *buf = (char*)malloc(256);
 		if(buf) {
@@ -487,11 +487,11 @@ int DigiPoll() {
         if(length<17) return 1;
 
         /* IF PACKET ARE ASCII, CONVERT THEM BEFORE HEADER IS: < 0xFF 0x01 */
-		#if OE_TYPE_PACKET_ENABLE==1
-		pkt_oe_format = false;
+	#if OE_TYPE_PACKET_ENABLE==1
+	pkt_oe_format = false;
         if(pkt[0] == '<' && pkt[1] == 0xFF) {
-			payload = (char*)malloc(255);
-			if(payload==0) return 0;
+	    payload = (char*)malloc(255);
+            if(payload==0) return 0;
             memset(payload, 0, 255);
             memcpy(payload, &pkt[3], length-3);
             length = EncodeAX25(payload, pkt);
