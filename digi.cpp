@@ -33,8 +33,10 @@ unsigned int stat_oe_pkt, stat_bin_pkt;
 /******************************************************************************
  * Check timer overflow
  *****************************************************************************/
-long TimerOverflow(unsigned long value) {
-    return (long)(value-wdt_clk) < 0 ? 1:0;
+bool TimerOverflow(unsigned long value) 
+{
+    if(wdt_clk > value) return true;		// Watchdog 1s clock overflow value
+    return false;
 }   
 
 
@@ -516,21 +518,24 @@ int DigiPoll() {
     }
 
     /* BEACON 1 TIMEOUT */
-    if(TimerOverflow(Beacon1Timer)!=0 ) { 
+    if(TimerOverflow(Beacon1Timer)) 
+    { 
         DigiSendBeacon(0);
         Beacon1Timer = wdt_clk + (uint32_t)B1_INTERVAL;
         return 1;
     }
 
     /* BEACON 2 TIMEOUT */
-    if(TimerOverflow(Beacon2Timer)!=0 ) {
+    if(TimerOverflow(Beacon2Timer)) 
+    {
         DigiSendBeacon(1);
         Beacon2Timer = wdt_clk + (uint32_t)B2_INTERVAL;
         return 1;
     }
 
     /* BEACON 3 TIMEOUT */
-    if(TimerOverflow(Beacon3Timer)!=0 ) {
+    if(TimerOverflow(Beacon3Timer)) 
+    {
         DigiSendBeacon(2);
         Beacon3Timer = wdt_clk + (uint32_t)B3_INTERVAL;
         return 1;
@@ -538,7 +543,7 @@ int DigiPoll() {
 
     /* TELEMETRY TIMEOUT */
     #if VOLT_ENABLE==1 || BMP180_ENABLE==1 || DS_ENABLE==1
-    if(TimerOverflow(TelemTimer)!=0) {
+    if(TimerOverflow(TelemTimer)) {
         DigiSendTelem();
         TelemTimer = wdt_clk + (uint32_t)TELEM_INTERVAL; 
         return 1;
